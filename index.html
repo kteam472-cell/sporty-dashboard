@@ -264,23 +264,26 @@ function todayStr() {
 
 async function loadData() {
   try {
-    const res = await fetch('/.netlify/functions/odds?t=' + Date.now());
-    if (!res.ok) throw new Error('API error');
+    const url = 'https://raw.githubusercontent.com/kteam472-cell/sporty-picks-data/main/picks.json?t=' + Date.now();
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('fetch failed');
     const data = await res.json();
     allGames = data.games || [];
     allProps = data.props || [];
     allParlays = data.parlays || [];
     document.getElementById('hDate').textContent = todayStr();
-    document.getElementById('hUpdated').textContent = 'Lines via DraftKings · Updated ' +
-      new Date(data.last_updated).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    const updated = data.last_updated ? new Date(data.last_updated).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : '—';
+    document.getElementById('hUpdated').textContent = 'Board by Sporty · Last updated ' + updated;
     renderRecord(data.record);
     updateCounts();
     renderGames();
     renderProps();
     renderParlays();
   } catch(e) {
-    document.getElementById('hUpdated').textContent = 'Could not load lines';
-    document.getElementById('gamesList').innerHTML = '<div class="empty-state">Lines unavailable. Try refreshing.</div>';
+    document.getElementById('hDate').textContent = todayStr();
+    document.getElementById('hUpdated').textContent = 'Board updates at 10AM when Sporty runs';
+    document.getElementById('gamesList').innerHTML = '<div class="empty-state">Board not yet posted today. Check back after 10AM ET.</div>';
+    document.getElementById('propsList').innerHTML = '<div class="empty-state">No props yet today.</div>';
   }
 }
 
@@ -321,7 +324,7 @@ function renderGames() {
     const hasPick = !!g.sporty_pick;
     const awayHl = isHl(g,'away_ml'), homeHl = isHl(g,'home_ml');
     const overHl = isHl(g,'over'), underHl = isHl(g,'under');
-    const sportLabel = {'baseball_mlb':'MLB','basketball_nba':'NBA','mma_mixed_martial_arts':'UFC'}[g.sport] || g.sport;
+    const sportLabel = g.sport;
     return `
       <div class="game-row ${hasPick?'has-pick':''}">
         <div class="game-header">
